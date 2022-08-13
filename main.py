@@ -5,15 +5,6 @@ from rasterio.warp import reproject
 from rasterio.io import MemoryFile
 from rasterio.merge import merge
 
-import chainer
-from chainer import cuda, serializers
-from skimage import img_as_float
-from skimage.io import imread, imsave
-from gp_gan import gp_gan
-from model import EncoderDecoder, DCGAN_G
-
-
-
 tds = rasterio.open("./images/11.tif")
 sds = rasterio.open("./images/14.tif")
 G = EncoderDecoder(64, 64, 3, 4000, image_size=64)
