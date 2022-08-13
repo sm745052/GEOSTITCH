@@ -1,47 +1,23 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import rasterio
 from rasterio.warp import reproject
 from rasterio.io import MemoryFile
 from rasterio.merge import merge
-
-tds = rasterio.open("./images/11.tif")
-sds = rasterio.open("./images/14.tif")
-G = EncoderDecoder(64, 64, 3, 4000, image_size=64)
-serializers.load_npz('models/blending_gan.npz', G)
-try:
-    cuda.get_device(0).use()  # Make a specified GPU current
-    G.to_gpu()  # Copy the model to the GPU
-except:
-    print("gpu not found at 0")
+from utils import custom_merge
 
 
+im1 = rasterio.open("./images/fcc_R2_AW_20220405_091_047_B_01.tif")
+im2 = rasterio.open("./images/fcc_R2A_AW_20220404_098_048_A_01.tif")
 
-im1_reproj, im1_reproj_trans = reproject(
-    source=rasterio.band(sds, [1, 2, 3]),
-    dst_crs=tds.profile["crs"],
+
+im2_reproj, im2_reproj_trans = reproject(
+    source=rasterio.band(im2, [1, 2, 3]),
+    dst_crs=im1.profile["crs"],
     dst_resolution=(30, 30),
 )
 
 
-def custom_merge_works(old_data, new_data, old_nodata, new_nodata, index=None, roff=None, coff=None):
-    print(old_data.shape)
-    print(new_data.shape)
-    obj = new_data
-    bg = old_data
-    black_pixels_mask = np.all(new_data == [0, 0, 0], axis=-1)
-    mask = ~black_pixels_mask
-    with chainer.using_config("train", False):
-        blended_im = gp_gan(obj, bg, mask, G, 64, 0, color_weight=1,
-                            sigma=0.5,
-                            gradient_kernel="normal", smooth_sigma=1,
-                            supervised=True,
-                            nz=100, n_iteration=1000)
-    old_data[:] = np.maximum(old_data, new_data)
-
-
 def create_dataset(data, crs, transform):
-    # Receives a 2D array, a transform and a crs to create a rasterio dataset
     memfile = MemoryFile()
     dataset = memfile.open(
         driver="GTiff",
@@ -53,10 +29,9 @@ def create_dataset(data, crs, transform):
         dtype=data.dtype,
     )
     dataset.write(data, [1, 2, 3])
-
     return dataset
 
 
-im1_reproj_ds = create_dataset(im1_reproj, tds.profile["crs"], im1_reproj_trans)
+im2_reproj_ds = create_dataset(im2_reproj, im1.profile["crs"], im2_reproj_trans)
 
-merged, transf = merge([im1_reproj_ds, tds], method=custom_merge_works)
+merged, transf = merge([im2_reproj_ds, im1], method=custom_merge)
