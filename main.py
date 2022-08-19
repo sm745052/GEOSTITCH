@@ -21,6 +21,7 @@ def custom_merge(merged_data, new_data, merged_data_mask, new_data_mask, index=N
     merged_mask = np.all(merged_image != [0, 0, 0], axis = -1)
     merged_image = cv2.cvtColor(merged_image, cv2.COLOR_RGB2RGBA)
     merged_image[:, :, 3] = merged_mask
+    print("added alpha channel to merged image")
     new_mask1 = np.all(new_image != [0, 0, 0], axis = -1)
     new_mask2 = np.all(new_image != [255, 255, 255], axis = -1)
     new_mask = new_mask1 & new_mask2
@@ -28,10 +29,13 @@ def custom_merge(merged_data, new_data, merged_data_mask, new_data_mask, index=N
     new_mask = np.all(new_image != [0, 0, 0], axis = -1)
     new_image = cv2.cvtColor(new_image, cv2.COLOR_RGB2RGBA)
     new_image[:, :, 3] = new_mask
+    print("added alpha channel to new image")
     merged_image_float = merged_image.astype(float)
     new_image_float = new_image.astype(float)
     opacity = 0.7
+    print("blending images")
     blended_img = blend_modes.soft_light(merged_image_float, new_image_float, opacity).astype(np.uint8)
+    print("finished blending")
     merged_data[:] = np.rollaxis(blended_img, 2, 0)[1:]
 
 
