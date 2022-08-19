@@ -36,7 +36,7 @@ def custom_merge(merged_data, new_data, merged_data_mask, new_data_mask, index=N
     print("blending images")
     blended_img = blend_modes.soft_light(merged_image_float, new_image_float, opacity).astype(np.uint8)
     print("finished blending")
-    merged_data[:] = np.rollaxis(blended_img, 2, 0)[1:]
+    merged_data[:] = np.rollaxis(blended_img, 2, 0)[0:3]
 
 
 
@@ -71,3 +71,5 @@ def create_dataset(data, crs, transform):
 im2_reproj_ds = create_dataset(im2_reproj, im1.profile["crs"], im2_reproj_trans)
 
 merged, transf = merge([im2_reproj_ds, im1], method = custom_merge)
+
+im2_reproj_ds = create_dataset(im2_reproj, im1.profile["crs"], im2_reproj_trans)
