@@ -32,7 +32,7 @@ def custom_merge(merged_data, new_data, merged_data_mask, new_data_mask, index=N
     new_image_float = new_image.astype(float)
     opacity = 0.7
     blended_img = blend_modes.soft_light(merged_image_float, new_image_float, opacity).astype(np.uint8)
-    merged_data[:] = np.rollaxis(blended_img, 2, 0)
+    merged_data[:] = np.rollaxis(blended_img, 2, 0)[1:]
 
 
 
