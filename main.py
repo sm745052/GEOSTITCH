@@ -5,7 +5,7 @@ from rasterio.io import MemoryFile
 from rasterio.merge import merge
 import matplotlib.pyplot as plt
 import cv2
-
+import blend_modes
 import numpy as np
 
 def custom_merge(merged_data, new_data, merged_data_mask, new_data_mask, index=None, roff=None, coff=None):
@@ -31,7 +31,7 @@ def custom_merge(merged_data, new_data, merged_data_mask, new_data_mask, index=N
     merged_image_float = merged_image.astype(float)
     new_image_float = new_image.astype(float)
     opacity = 0.7
-    blended_img = soft_light(merged_image_float, new_image_float, opacity).astype(np.uint8)
+    blended_img = blend_mode.soft_light(merged_image_float, new_image_float, opacity).astype(np.uint8)
     merged_data[:] = np.rollaxis(blended_img, 2, 0)
 
 
