@@ -37,8 +37,8 @@ def custom_merge(merged_data, new_data, merged_data_mask, new_data_mask, index=N
 
 
 
-im1 = rasterio.open("./GEOSTITCH/images/fcc_R2_AW_20220405_091_047_B_01.tif")
-im2 = rasterio.open("./GEOSTITCH/images/fcc_R2A_AW_20220404_098_048_A_01.tif")
+im1 = rasterio.open("./images/fcc_R2_AW_20220405_091_047_B_01.tif")
+im2 = rasterio.open("./images/fcc_R2A_AW_20220404_098_048_A_01.tif")
 
 
 im2_reproj, im2_reproj_trans = reproject(
