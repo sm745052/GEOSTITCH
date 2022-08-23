@@ -2,3 +2,4 @@ rasterio
 numpy
 matplotlib
 whitebox
+opencv-python
