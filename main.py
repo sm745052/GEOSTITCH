@@ -7,15 +7,16 @@ from rasterio.features import sieve
 import shutil
 import cv2
 import os
+import sys
 
 
 
-tmpA = shutil.copy("/content/GEOSTITCH/images/C01.tif", "/tmp/A.tif")
-tmpB = shutil.copy("/content/GEOSTITCH/images/D01.tif", "/tmp/B.tif")
+# tmpA = shutil.copy("/content/GEOSTITCH/images/C01.tif", "/tmp/A.tif")
+# tmpB = shutil.copy("/content/GEOSTITCH/images/D01.tif", "/tmp/B.tif")
 
 
-im1 = rasterio.open(tmpA, 'r+')
-im2 = rasterio.open(tmpB, 'r+')
+# im1 = rasterio.open(tmpA, 'r+')
+# im2 = rasterio.open(tmpB, 'r+')
 
 
 def create_dataset(data, crs, transform):
@@ -39,10 +40,6 @@ def save_raster(src, file, band = None):
   if band is None:
     n = 3
   array = src.read()
-  # black = np.all(np.rollaxis(array, 0, 3)==[0, 0, 0], axis=-1)
-  # notblack = ~black
-  # array = np.rollaxis(cv2.bitwise_and(np.rollaxis(array, 0, 3), np.rollaxis(array, 0, 3), mask = notblack.astype(np.uint8)), 2, 0)
-  # array += (black * 255).astype(np.uint16)
   with rasterio.Env():
 
       # Write an array as a raster band to a new 8-bit file. For
@@ -71,69 +68,105 @@ def multibander(ls):
 
 
 
-im1.nodata = 0
-im2.nodata = 0
+# im1.nodata = 0
+# im2.nodata = 0
 
 
 
-msk1 = im1.read_masks()
-new_msk1 = (msk1[0] & msk1[1] & msk1[2])
-sieved_msk1 = sieve(new_msk1, size=10**6)
-im1.write_mask(sieved_msk1)
+# msk1 = im1.read_masks()
+# new_msk1 = (msk1[0] & msk1[1] & msk1[2])
+# sieved_msk1 = sieve(new_msk1, size=10**6)
+# im1.write_mask(sieved_msk1)
 
 
 
-msk2 = im2.read_masks()
-new_msk2 = (msk2[0] & msk2[1] & msk2[2])
-sieved_msk2 = sieve(new_msk2, size=10**6)
-im2.write_mask(sieved_msk2)
+# msk2 = im2.read_masks()
+# new_msk2 = (msk2[0] & msk2[1] & msk2[2])
+# sieved_msk2 = sieve(new_msk2, size=10**6)
+# im2.write_mask(sieved_msk2)
 
-
-for i in range(3):
-  save_raster(im1, '/tmp/A'+str(i)+'.tif', i)
-  save_raster(im2, '/tmp/B'+str(i)+'.tif', i)
 
 # for i in range(3):
-#   os.system('whitebox_tools -r=HistogramMatchingTwoImages -v --wd="/tmp/" --i1=A{}.tif --i2=B{}.tif -o=hm{}.tif'.format(i, i, i))
+#   save_raster(im1, '/tmp/A'+str(i)+'.tif', i)
+#   save_raster(im2, '/tmp/B'+str(i)+'.tif', i)
 
-# hm0 = rasterio.open('/tmp/hm0.tif')
-# hm1 = rasterio.open('/tmp/hm1.tif')
-# hm2 = rasterio.open('/tmp/hm2.tif')
+# # for i in range(3):
+# #   os.system('whitebox_tools -r=HistogramMatchingTwoImages -v --wd="/tmp/" --i1=A{}.tif --i2=B{}.tif -o=hm{}.tif'.format(i, i, i))
 
-# im1 = multibander([hm0, hm1, hm2])
+# # hm0 = rasterio.open('/tmp/hm0.tif')
+# # hm1 = rasterio.open('/tmp/hm1.tif')
+# # hm2 = rasterio.open('/tmp/hm2.tif')
 
-im2_reproj, im2_reproj_trans = reproject(
-    source=rasterio.band(im2, [1, 2, 3]),
-    dst_crs=im1.profile["crs"],
-    dst_resolution=(30, 30),
-)
+# # im1 = multibander([hm0, hm1, hm2])
 
-im2_reproj_ds = create_dataset(im2_reproj, im1.profile["crs"], im2_reproj_trans)
+# im2_reproj, im2_reproj_trans = reproject(
+#     source=rasterio.band(im2, [1, 2, 3]),
+#     dst_crs=im1.profile["crs"],
+#     dst_resolution=(30, 30),
+# )
 
-
-
-for i in range(3):
-  save_raster(im1, 'A'+str(i)+'.tif', i)
-  save_raster(im2_reproj_ds, 'B'+str(i)+'.tif', i)
+# im2_reproj_ds = create_dataset(im2_reproj, im1.profile["crs"], im2_reproj_trans)
 
 
 
-
-import os
-for i in range(3):
-  os.system('whitebox_tools -r=MosaicWithFeathering -v --wd="." --input1=./A{}.tif --input2=./B{}.tif -o=out{}.tif --method=cc --weight=4.0'.format(i, i, i))
-  print(i, "done")
-
-
-
-o0 = rasterio.open('./out0.tif')
-o1 = rasterio.open('./out1.tif')
-o2 = rasterio.open('./out2.tif')
+# for i in range(3):
+#   save_raster(im1, 'A'+str(i)+'.tif', i)
+#   save_raster(im2_reproj_ds, 'B'+str(i)+'.tif', i)
 
 
 
 
-o = multibander([o0, o1, o2])
+# import os
+# for i in range(3):
+#   os.system('whitebox_tools -r=MosaicWithFeathering -v --wd="." --input1=./A{}.tif --input2=./B{}.tif -o=out{}.tif --method=cc --weight=4.0'.format(i, i, i))
+#   print(i, "done")
 
 
-save_raster(o, './final.tif')
+
+# o0 = rasterio.open('./out0.tif')
+# o1 = rasterio.open('./out1.tif')
+# o2 = rasterio.open('./out2.tif')
+
+
+
+
+# o = multibander([o0, o1, o2])
+
+
+# save_raster(o, './final.tif')
+
+
+
+
+
+
+if __name__ == '__main__':
+    image_files = sys.argv[1:]
+    print("copying images to ./tmp/")
+    tmps = [shutil.copy(i, os.path.join('./tmp', i.split('/')[-1])) for i in image_files]
+    rasters = [rasterio.open(i, "r+") for i in tmps]
+
+
+    print("setting nodata values")
+    for i in rasters:
+        i.nodata = 0
+    
+    print("seiving masks")
+    for i in rasters:
+        msk = i.read_masks()
+        new_msk = (msk[0] & msk[1] & msk[2])
+        sieved_msk1 = sieve(new_msk, size=10**6)
+        i.write_mask(sieved_msk1)
+    print("reprojecting and saving rasters")
+
+    for ind, i in enumerate(rasters[1:]):
+        im_reproj, im_reproj_trans = reproject(
+            source=rasterio.band(i, [1, 2, 3]),
+            dst_crs=rasters[0].profile["crs"],
+            dst_resolution=(30, 30),
+        )
+        im_reproj_ds = create_dataset(im_reproj, i.profile["crs"], im_reproj_trans)
+        for j in range(3):
+            save_raster(im_reproj_ds,  tmps[1:][ind]+str(j)+'.tif', j)
+    for j in range(3):
+        save_raster(rasters[0],  tmps[0][ind]+str(j)+'.tif', j)
