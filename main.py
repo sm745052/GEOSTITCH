@@ -168,6 +168,6 @@ if __name__ == '__main__':
         )
         im_reproj_ds = create_dataset(im_reproj, i.profile["crs"], im_reproj_trans)
         for j in range(3):
-            save_raster(im_reproj_ds,  tmps[1:][ind]+str(j)+'.tif', j)
+            save_raster(im_reproj_ds,  tmps[1:][ind][:-4]+str(j)+'.tif', j)
     for j in range(3):
-        save_raster(rasters[0],  tmps[0][ind]+str(j)+'.tif', j)
+        save_raster(rasters[0],  tmps[0][:-4]+str(j)+'.tif', j)
