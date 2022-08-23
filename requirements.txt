@@ -1,4 +1,4 @@
 rasterio
 numpy
 matplotlib
-whiitebox
+whitebox
