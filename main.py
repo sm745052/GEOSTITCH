@@ -141,6 +141,7 @@ def multibander(ls):
 
 
 if __name__ == '__main__':
+    os.system('mkdir tmp')
     image_files = sys.argv[1:]
     print("copying images to ./tmp/")
     tmps = [shutil.copy(i, os.path.join('./tmp', i.split('/')[-1])) for i in image_files]
