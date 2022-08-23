@@ -1,56 +1,21 @@
-import numpy as np
 import rasterio
 from rasterio.warp import reproject
 from rasterio.io import MemoryFile
-from rasterio.merge import merge
 import matplotlib.pyplot as plt
-import cv2
-import blend_modes
 import numpy as np
-
-def custom_merge(merged_data, new_data, merged_data_mask, new_data_mask, index=None, roff=None, coff=None):
-    '''
-    Edit this function to change the merging algorithm.
-    '''
-    merged_image = np.rollaxis(merged_data, 0, 3)
-    new_image = np.rollaxis(new_data, 0, 3)
-    merged_mask1 = np.all(merged_image != [0, 0, 0], axis = -1)
-    merged_mask2 = np.all(merged_image != [255, 255, 255], axis = -1)
-    merged_mask = merged_mask1 & merged_mask2
-    merged_image[:] = cv2.bitwise_and(merged_image, merged_image, mask = merged_mask.astype(np.uint8))
-    merged_mask = np.all(merged_image != [0, 0, 0], axis = -1)
-    merged_image = cv2.cvtColor(merged_image, cv2.COLOR_RGB2RGBA)
-    merged_image[:, :, 3] = merged_mask
-    print("added alpha channel to merged image")
-    new_mask1 = np.all(new_image != [0, 0, 0], axis = -1)
-    new_mask2 = np.all(new_image != [255, 255, 255], axis = -1)
-    new_mask = new_mask1 & new_mask2
-    new_image[:] = cv2.bitwise_and(new_image, new_image, mask = new_mask.astype(np.uint8))
-    new_mask = np.all(new_image != [0, 0, 0], axis = -1)
-    new_image = cv2.cvtColor(new_image, cv2.COLOR_RGB2RGBA)
-    new_image[:, :, 3] = new_mask
-    print("added alpha channel to new image")
-    merged_image_float = merged_image.astype(float)
-    new_image_float = new_image.astype(float)
-    opacity = 0.7
-    print("blending images")
-    blended_img = blend_modes.soft_light(merged_image_float, new_image_float, opacity).astype(np.uint8)
-    print("finished blending")
-    merged_data[:] = np.rollaxis(blended_img, 2, 0)[0:3]
+from rasterio.features import sieve
+import shutil
+import cv2
+import os
 
 
 
+tmpA = shutil.copy("/content/GEOSTITCH/images/C01.tif", "/tmp/A.tif")
+tmpB = shutil.copy("/content/GEOSTITCH/images/D01.tif", "/tmp/B.tif")
 
-im1 = rasterio.open("./images/fcc_R2_AW_20220405_091_047_B_01.tif")
-im2 = rasterio.open("./images/fcc_R2A_AW_20220404_098_048_A_01.tif")
 
-
-im2_reproj, im2_reproj_trans = reproject(
-    source=rasterio.band(im2, [1, 2, 3]),
-    dst_crs=im1.profile["crs"],
-    dst_resolution=(30, 30),
-)
-
+im1 = rasterio.open(tmpA, 'r+')
+im2 = rasterio.open(tmpB, 'r+')
 
 
 def create_dataset(data, crs, transform):
@@ -68,8 +33,107 @@ def create_dataset(data, crs, transform):
     return dataset
 
 
+
+def save_raster(src, file, band = None):
+  n=1
+  if band is None:
+    n = 3
+  array = src.read()
+  # black = np.all(np.rollaxis(array, 0, 3)==[0, 0, 0], axis=-1)
+  # notblack = ~black
+  # array = np.rollaxis(cv2.bitwise_and(np.rollaxis(array, 0, 3), np.rollaxis(array, 0, 3), mask = notblack.astype(np.uint8)), 2, 0)
+  # array += (black * 255).astype(np.uint16)
+  with rasterio.Env():
+
+      # Write an array as a raster band to a new 8-bit file. For
+      # the new file's profile, we start with the profile of the source
+      profile = src.profile
+
+      # And then change the band count to 1, set the
+      # dtype to uint8, and specify LZW compression.
+      profile.update(
+          dtype=rasterio.uint8,
+          count=n,
+          compress='lzw')
+  if n==3:
+      with rasterio.open(file, 'w', **profile) as dst:
+          dst.write(array.astype(rasterio.uint8))
+  else:
+      with rasterio.open(file, 'w', **profile) as dst:
+          dst.write(array[band].astype(rasterio.uint8), 1)
+
+
+
+def multibander(ls):
+  n = len(ls)
+  arr = np.array([i.read()[0] for i in ls]).astype(np.uint8)
+  return create_dataset(arr, ls[0].profile['crs'], ls[0].transform)
+
+
+
+im1.nodata = 0
+im2.nodata = 0
+
+
+
+msk1 = im1.read_masks()
+new_msk1 = (msk1[0] & msk1[1] & msk1[2])
+sieved_msk1 = sieve(new_msk1, size=10**6)
+im1.write_mask(sieved_msk1)
+
+
+
+msk2 = im2.read_masks()
+new_msk2 = (msk2[0] & msk2[1] & msk2[2])
+sieved_msk2 = sieve(new_msk2, size=10**6)
+im2.write_mask(sieved_msk2)
+
+
+for i in range(3):
+  save_raster(im1, '/tmp/A'+str(i)+'.tif', i)
+  save_raster(im2, '/tmp/B'+str(i)+'.tif', i)
+
+# for i in range(3):
+#   os.system('whitebox_tools -r=HistogramMatchingTwoImages -v --wd="/tmp/" --i1=A{}.tif --i2=B{}.tif -o=hm{}.tif'.format(i, i, i))
+
+# hm0 = rasterio.open('/tmp/hm0.tif')
+# hm1 = rasterio.open('/tmp/hm1.tif')
+# hm2 = rasterio.open('/tmp/hm2.tif')
+
+# im1 = multibander([hm0, hm1, hm2])
+
+im2_reproj, im2_reproj_trans = reproject(
+    source=rasterio.band(im2, [1, 2, 3]),
+    dst_crs=im1.profile["crs"],
+    dst_resolution=(30, 30),
+)
+
 im2_reproj_ds = create_dataset(im2_reproj, im1.profile["crs"], im2_reproj_trans)
 
-merged, transf = merge([im2_reproj_ds, im1], method = custom_merge)
 
-im2_reproj_ds = create_dataset(im2_reproj, im1.profile["crs"], im2_reproj_trans)
+
+for i in range(3):
+  save_raster(im1, 'A'+str(i)+'.tif', i)
+  save_raster(im2_reproj_ds, 'B'+str(i)+'.tif', i)
+
+
+
+
+import os
+for i in range(3):
+  os.system('whitebox_tools -r=MosaicWithFeathering -v --wd="." --input1=./A{}.tif --input2=./B{}.tif -o=out{}.tif --method=cc --weight=4.0'.format(i, i, i))
+  print(i, "done")
+
+
+
+o0 = rasterio.open('./out0.tif')
+o1 = rasterio.open('./out1.tif')
+o2 = rasterio.open('./out2.tif')
+
+
+
+
+o = multibander([o0, o1, o2])
+
+
+save_raster(o, './final.tif')
