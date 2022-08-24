@@ -125,7 +125,9 @@ def multibander(ls):
 # save_raster(o, './final.tif')
 
 
-
+def correct_dtype(x):
+    ob = rasterio.open(x)
+    save_raster(ob, input)
 
 
 
@@ -164,6 +166,7 @@ if __name__ == '__main__':
             input1 = './tmp/' + raw_names[0] + '___' + str(j) + '.tif'
             input2 = './tmp/' + i + '___' + str(j) + '.tif'
             r = os.system('whitebox_tools --run="MosaicWithFeathering" --input1={} --input2={} --output={} --method=cc --weight=4.0'.format(input1, input2, input1))
+            correct_dtype(input1)
             if(r==0):
                 done.add(i)
             else:
