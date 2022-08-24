@@ -22,6 +22,9 @@ def rearrange(image_files):
                 tmp = rasters[j]
                 rasters[j] = rasters[i]
                 rasters[i] = tmp
+                tmp = image_files[j]
+                image_files[j] = image_files[i]
+                image_files[i] = tmp
                 break
     return rasters
 
