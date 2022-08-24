@@ -158,14 +158,14 @@ if __name__ == '__main__':
             save_raster(im_reproj_ds,  tmps[1:][ind][:-4]+'___'+str(j)+'.tif', j)
     for j in range(3):
         save_raster(rasters[0],  tmps[0][:-4]+'___'+str(j)+'.tif', j)
-    done = [raw_names[0]]
+    done = {raw_names[0]}
     for i in raw_names[1:]:
         for j in range(3):
             input1 = './tmp/' + raw_names[0] + '___' + str(j) + '.tif'
             input2 = './tmp/' + i + '___' + str(j) + '.tif'
             r = os.system('whitebox_tools --run="MosaicWithFeathering" --input1={} --input2={} --output={} --method=cc --weight=4.0'.format(input1, input2, input1))
             if(r==0):
-                done.append(i)
+                done.add(i)
             else:
                 print("error in {}, band = {}".format(i, j))
 
