@@ -128,14 +128,13 @@ def multibander(ls):
 def correct_dtype(x):
     ob = rasterio.open(x)
     try:
-        save_raster(ob, x, 1)
+        save_raster(ob, x, 0)
     except:
         save_raster(ob, x)
 
 
 
 if __name__ == '__main__':
-    wbt = whitebox.WhiteboxTools()
     os.system('mkdir tmp')
     image_files = sys.argv[1:]
     raw_names = [i.split('/')[-1][:-4] for i in image_files]
