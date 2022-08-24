@@ -8,9 +8,22 @@ import shutil
 import cv2
 import os
 import sys
-import whitebox
 
 
+
+
+
+def rearrange(image_files):
+    rasters = [rasterio.open(i) for i in image_files]
+    bboxes = [i.bounds for i in rasters]
+    for i in range(len(rasters)-1):
+        for j in range(i+1, len(rasters)):
+            if(not rasterio.coords.disjoint_bounds(bboxes[i], bboxes[j])):
+                tmp = rasters[j]
+                rasters[j] = rasters[i]
+                rasters[i] = tmp
+                break
+    return rasters
 
 
 
@@ -57,73 +70,6 @@ def multibander(ls):
 
 
 
-# im1.nodata = 0
-# im2.nodata = 0
-
-
-
-# msk1 = im1.read_masks()
-# new_msk1 = (msk1[0] & msk1[1] & msk1[2])
-# sieved_msk1 = sieve(new_msk1, size=10**6)
-# im1.write_mask(sieved_msk1)
-
-
-
-# msk2 = im2.read_masks()
-# new_msk2 = (msk2[0] & msk2[1] & msk2[2])
-# sieved_msk2 = sieve(new_msk2, size=10**6)
-# im2.write_mask(sieved_msk2)
-
-
-# for i in range(3):
-#   save_raster(im1, '/tmp/A'+str(i)+'.tif', i)
-#   save_raster(im2, '/tmp/B'+str(i)+'.tif', i)
-
-# # for i in range(3):
-# #   os.system('whitebox_tools -r=HistogramMatchingTwoImages -v --wd="/tmp/" --i1=A{}.tif --i2=B{}.tif -o=hm{}.tif'.format(i, i, i))
-
-# # hm0 = rasterio.open('/tmp/hm0.tif')
-# # hm1 = rasterio.open('/tmp/hm1.tif')
-# # hm2 = rasterio.open('/tmp/hm2.tif')
-
-# # im1 = multibander([hm0, hm1, hm2])
-
-# im2_reproj, im2_reproj_trans = reproject(
-#     source=rasterio.band(im2, [1, 2, 3]),
-#     dst_crs=im1.profile["crs"],
-#     dst_resolution=(30, 30),
-# )
-
-# im2_reproj_ds = create_dataset(im2_reproj, im1.profile["crs"], im2_reproj_trans)
-
-
-
-# for i in range(3):
-#   save_raster(im1, 'A'+str(i)+'.tif', i)
-#   save_raster(im2_reproj_ds, 'B'+str(i)+'.tif', i)
-
-
-
-
-# import os
-# for i in range(3):
-#   os.system('whitebox_tools -r=MosaicWithFeathering -v --wd="." --input1=./A{}.tif --input2=./B{}.tif -o=out{}.tif --method=cc --weight=4.0'.format(i, i, i))
-#   print(i, "done")
-
-
-
-# o0 = rasterio.open('./out0.tif')
-# o1 = rasterio.open('./out1.tif')
-# o2 = rasterio.open('./out2.tif')
-
-
-
-
-# o = multibander([o0, o1, o2])
-
-
-# save_raster(o, './final.tif')
-
 
 def correct_dtype(x):
     ob = rasterio.open(x)
@@ -158,10 +104,17 @@ if __name__ == '__main__':
             dst_resolution=(30, 30),
         )
         im_reproj_ds = create_dataset(im_reproj, i.profile["crs"], im_reproj_trans)
+        save_raster(im_reproj_ds, tmps[1:][ind][:-4]+'.tif')
         for j in range(3):
             save_raster(im_reproj_ds,  tmps[1:][ind][:-4]+'___'+str(j)+'.tif', j)
     for j in range(3):
         save_raster(rasters[0],  tmps[0][:-4]+'___'+str(j)+'.tif', j)
+    
+
+    image_files = rearrange(image_files)
+    raw_names = [i.split('/')[-1][:-4] for i in image_files]
+
+
     done = {raw_names[0]}
     for i in raw_names[1:]:
         for j in range(3):
