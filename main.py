@@ -171,6 +171,6 @@ if __name__ == '__main__':
                 print(e)
 
 
-    o = multibander([rasterio.read('./tmp/' + raw_names[0] + '___' + str(j)+'.tif') for j in range(3)])
+    o = multibander([rasterio.open('./tmp/' + raw_names[0] + '___' + str(j)+'.tif') for j in range(3)])
     save_raster(o, './final.tif')
     print("successfully appended", done)
