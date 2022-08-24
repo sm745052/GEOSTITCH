@@ -8,15 +8,10 @@ import shutil
 import cv2
 import os
 import sys
+import whitebox
 
 
 
-# tmpA = shutil.copy("/content/GEOSTITCH/images/C01.tif", "/tmp/A.tif")
-# tmpB = shutil.copy("/content/GEOSTITCH/images/D01.tif", "/tmp/B.tif")
-
-
-# im1 = rasterio.open(tmpA, 'r+')
-# im2 = rasterio.open(tmpB, 'r+')
 
 
 def create_dataset(data, crs, transform):
@@ -41,13 +36,7 @@ def save_raster(src, file, band = None):
     n = 3
   array = src.read()
   with rasterio.Env():
-
-      # Write an array as a raster band to a new 8-bit file. For
-      # the new file's profile, we start with the profile of the source
       profile = src.profile
-
-      # And then change the band count to 1, set the
-      # dtype to uint8, and specify LZW compression.
       profile.update(
           dtype=rasterio.uint8,
           count=n,
@@ -141,17 +130,16 @@ def multibander(ls):
 
 
 if __name__ == '__main__':
+    wbt = whitebox.WhiteboxTools()
     os.system('mkdir tmp')
     image_files = sys.argv[1:]
+    raw_names = [i.split('/')[-1][:-4] for i in image_files]
     print("copying images to ./tmp/")
     tmps = [shutil.copy(i, os.path.join('./tmp', i.split('/')[-1])) for i in image_files]
     rasters = [rasterio.open(i, "r+") for i in tmps]
-
-
     print("setting nodata values")
     for i in rasters:
         i.nodata = 0
-    
     print("seiving masks")
     for i in rasters:
         msk = i.read_masks()
@@ -159,7 +147,6 @@ if __name__ == '__main__':
         sieved_msk1 = sieve(new_msk, size=10**6)
         i.write_mask(sieved_msk1)
     print("reprojecting and saving rasters")
-
     for ind, i in enumerate(rasters[1:]):
         im_reproj, im_reproj_trans = reproject(
             source=rasterio.band(i, [1, 2, 3]),
@@ -171,3 +158,19 @@ if __name__ == '__main__':
             save_raster(im_reproj_ds,  tmps[1:][ind][:-4]+'___'+str(j)+'.tif', j)
     for j in range(3):
         save_raster(rasters[0],  tmps[0][:-4]+'___'+str(j)+'.tif', j)
+    done = [raw_names[0]]
+    for i in raw_names[1:]:
+        for j in range(3):
+            input1 = './tmp/' + raw_names[0] + '___' + j
+            input2 = './tmp/' + i + '___' + j
+            try:
+                wbt.mosaic_with_feathering(input1, input2, input1, method="cc", weight=4.0)
+                done.append(i)
+            except Exception as e:
+                print("error in {}, band = {}".format(i, j))
+                print(e)
+
+
+    o = multibander([rasterio.read('./tmp/' + raw_names[0] + '___' + j) for j in range(3)])
+    save_raster(o, './final.tif')
+    print("successfully appended", done)
