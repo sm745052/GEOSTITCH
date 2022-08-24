@@ -161,8 +161,8 @@ if __name__ == '__main__':
     done = [raw_names[0]]
     for i in raw_names[1:]:
         for j in range(3):
-            input1 = './tmp/' + raw_names[0] + '___' + j
-            input2 = './tmp/' + i + '___' + j
+            input1 = './tmp/' + raw_names[0] + '___' + str(j) + '.tif'
+            input2 = './tmp/' + i + '___' + str(j) + '.tif'
             try:
                 wbt.mosaic_with_feathering(input1, input2, input1, method="cc", weight=4.0)
                 done.append(i)
@@ -171,6 +171,6 @@ if __name__ == '__main__':
                 print(e)
 
 
-    o = multibander([rasterio.read('./tmp/' + raw_names[0] + '___' + j) for j in range(3)])
+    o = multibander([rasterio.read('./tmp/' + raw_names[0] + '___' + str(j)+'.tif') for j in range(3)])
     save_raster(o, './final.tif')
     print("successfully appended", done)
