@@ -127,7 +127,10 @@ def multibander(ls):
 
 def correct_dtype(x):
     ob = rasterio.open(x)
-    save_raster(ob, x)
+    try:
+        save_raster(ob, x, 1)
+    except:
+        save_raster(ob, x)
 
 
 
