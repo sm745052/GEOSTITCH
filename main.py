@@ -163,12 +163,11 @@ if __name__ == '__main__':
         for j in range(3):
             input1 = './tmp/' + raw_names[0] + '___' + str(j) + '.tif'
             input2 = './tmp/' + i + '___' + str(j) + '.tif'
-            try:
-                wbt.mosaic_with_feathering(input1, input2, input1, method="cc", weight=4.0)
+            r = os.system('whitebox_tools --run="MosaicWithFeathering" --input1={} --input2={} --output={} --method=cc --weight=4.0'.format(input1, input2, input1))
+            if(r==0):
                 done.append(i)
-            except Exception as e:
+            else:
                 print("error in {}, band = {}".format(i, j))
-                print(e)
 
 
     o = multibander([rasterio.open('./tmp/' + raw_names[0] + '___' + str(j)+'.tif') for j in range(3)])
