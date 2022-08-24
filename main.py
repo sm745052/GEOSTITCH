@@ -116,7 +116,7 @@ if __name__ == '__main__':
 
     image_files = rearrange(image_files)
     raw_names = [i.split('/')[-1][:-4] for i in image_files]
-
+    print(raw_names)
 
     done = {raw_names[0]}
     for i in raw_names[1:]:
