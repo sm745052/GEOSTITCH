@@ -130,7 +130,8 @@ def rearrange(raw_names):
     bounds = [r.bounds for r in rasters]
     centers = [((i.left+i.right)/2, (i.top+i.bottom)/2) for i in bounds]
     raw_names_centers = list(zip(raw_names, centers))
-    raw_names_centers[1:] = sorted(raw_names_centers[1:], key = lambda x: (x[0]-raw_names_centers[0][0])**2 + (x[1]-raw_names_centers[0][1])**2)
+    raw_names_centers[1:] = sorted(raw_names_centers[1:], key = lambda x: (x[1][0]-raw_names_centers[0][1][0])**2 + (x[1][1]-raw_names_centers[0][1][1])**2)
+    return raw_names_centers
     return [i[0] for i in raw_names_centers]
 
 
