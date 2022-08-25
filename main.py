@@ -125,6 +125,15 @@ def multibander(ls):
 # save_raster(o, './final.tif')
 
 
+def rearrange(raw_names):
+    rasters = [rasterio.open('./tmp/' + i + '___1.tif') for i in raw_names]
+    bounds = [r.bounds for r in rasters]
+    centers = [((i.left+i.right)/2, (i.top+i.bottom)/2) for i in bounds]
+    raw_names_centers = list(zip(raw_names, centers))
+    raw_names_centers[1:] = sorted(raw_names_centers[1:], key = lambda x: (x[0]-raw_names_centers[0][0])**2 + (x[1]-raw_names_centers[0][1])**2)
+    return [i[0] for i in raw_names_centers]
+
+
 def correct_dtype(x):
     ob = rasterio.open(x)
     try:
@@ -158,10 +167,15 @@ if __name__ == '__main__':
             dst_resolution=(30, 30),
         )
         im_reproj_ds = create_dataset(im_reproj, i.profile["crs"], im_reproj_trans)
+        print("saving reprocted per bands")
         for j in range(3):
             save_raster(im_reproj_ds,  tmps[1:][ind][:-4]+'___'+str(j)+'.tif', j)
     for j in range(3):
         save_raster(rasters[0],  tmps[0][:-4]+'___'+str(j)+'.tif', j)
+    print("reprojection done")
+    print("starting rearrangement")
+    raw_names = rearrange(raw_names)
+    print(raw_names)
     done = {raw_names[0]}
     for i in raw_names[1:]:
         for j in range(3):
